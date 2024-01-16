@@ -25,7 +25,6 @@ class MainWindow(QMainWindow):
         data_entry_window.exec_()
 
     def on_pushButton_2_clicked(self):  # кнопка данные
-        print("Нажата кнопка pushButton_2")
         check_data_window = CheckYourDataInFile(None)  
         check_data_window.exec_()
 
@@ -118,22 +117,6 @@ class DataEntryWindow(QDialog):
 
         self.save_to_file(result_str)
 
-    def save_to_file(self, result_str):
-        try:
-            
-            file_path = "text_results.txt"
-
-            
-            if not os.path.exists(file_path):
-                with open(file_path, "w"):
-                    pass
-
-            
-            with open(file_path, "a") as file:
-                file.write(result_str)
-
-        except Exception as e:
-            print(f"Error saving to file: {e}")
 
     def clear_fields(self):
         self.text_income.clear()
@@ -145,7 +128,7 @@ class DataEntryWindow(QDialog):
         self.text_total_payment.clear()
 
 
-#РАСЧЕТ В АНАЛИЗЕ
+#РАСЧЕТ В EXCEL (добавить запись)
 class CheckYourDataInFile(QDialog):
     def __init__(self, selected_paths):
         super().__init__()

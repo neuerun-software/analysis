@@ -1,11 +1,9 @@
 import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QInputDialog, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QFileDialog
 from PyQt5.uic import loadUi
-from docx import Document
+import csv
 
 
-
-#ОСНОВНОЕ ОКНО
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -26,8 +24,8 @@ class MainWindow(QMainWindow):
         data_entry_window = DataEntryWindow()
         data_entry_window.exec_()
 
-    def on_pushButton_2_clicked(self):  # кнопка данные
-        check_data_window = CheckYourDataInFile(None)  
+    def on_pushButton_2_clicked(self):  # сохраниение суммы чисел
+        check_data_window = ConvergenceCalculator()  
         check_data_window.exec_()
 
     def on_checkBox_stateChanged(self, state):
@@ -39,6 +37,63 @@ class MainWindow(QMainWindow):
         if state == 2:  # state == 2, если чекбокс отмечен
             about_instruction_dialog = AboutInstruction(self)
             about_instruction_dialog.exec_()
+
+
+class ConvergenceCalculator(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle('Convergence Calculator')
+
+        self.input_label = QLabel('Введите числа через запятую:')
+        self.input_edit = QLineEdit()
+        self.result_label = QLabel('Результат:')
+
+        self.calculate_button = QPushButton('Вычислить')
+        self.calculate_button.clicked.connect(self.calculate_convergence)
+
+        self.save_button = QPushButton('Сохранить')
+        self.save_button.clicked.connect(self.save_to_csv)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.input_label)
+        layout.addWidget(self.input_edit)
+        layout.addWidget(self.calculate_button)
+        layout.addWidget(self.result_label)
+        layout.addWidget(self.save_button)
+
+        self.setLayout(layout)
+
+    def calculate_convergence(self):
+        input_text = self.input_edit.text()
+        try:
+            numbers = [float(num) for num in input_text.split(',')]
+            result = sum(numbers)
+            self.result_label.setText(f'Результат: {result}')
+        except ValueError:
+            self.result_label.setText('Ошибка ввода. Пожалуйста, введите числа, разделенные запятой.')
+
+    def save_to_csv(self):
+        try:
+            file_path, _ = QFileDialog.getSaveFileName(self, 'Сохранить результат', '', 'CSV Files (*.csv);;All Files (*)')
+            if not file_path:
+                return  
+
+            is_new_file = not os.path.exists(file_path)
+            with open(file_path, 'a', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+
+                if is_new_file:
+                    csv_writer.writerow(['Результат'])
+
+                result_text = self.result_label.text().replace('Результат: ', '')
+                csv_writer.writerow([result_text])
+
+        except Exception as e:
+            self.result_label.setText(f'Ошибка при сохранении в CSV: {e}')
 
 
 #ОКНО АНАЛИЗА
@@ -114,22 +169,17 @@ class DataEntryWindow(QDialog):
         total_payment = loan_amount * (1 + interest_rate / 100) ** loan_duration
         self.text_total_payment.setText(str(total_payment))
 
-        
         result_str = f"Income: {income}\nExpense: {expense}\nNet Income: {net_income}\nLoan Amount: {loan_amount}\nLoan Duration: {loan_duration}\nInterest Rate: {interest_rate}\nTotal Payment: {total_payment}\n"
-
         self.save_to_file(result_str)
 
     def save_to_file(self, result_str):
         try:
-            
             file_path = "text_results.txt"
 
-            
             if not os.path.exists(file_path):
                 with open(file_path, "w"):
                     pass
 
-            
             with open(file_path, "a") as file:
                 file.write(result_str)
 
@@ -146,129 +196,7 @@ class DataEntryWindow(QDialog):
         self.text_total_payment.clear()
 
 
-#РАСЧЕТ В EXCEL (добавить запись)
-class CheckYourDataInFile(QDialog):
-    def __init__(self, selected_paths):
-        super().__init__()
-
-        self.setWindowTitle("Работа с файлами")
-        self.setGeometry(100, 100, 400, 300)
-
-        self.selected_paths = selected_paths
-
-        layout = QVBoxLayout()
-
-        self.operation_label = QLabel("Выберите операцию:")
-        layout.addWidget(self.operation_label)
-
-
-        self.save_result_button = QPushButton("Сохранить результат в файл", self)
-        self.save_result_button.clicked.connect(self.save_result_to_file)
-        layout.addWidget(self.save_result_button)
-
-        self.operation_combo = QComboBox(self)
-        self.operation_combo.addItem("Сумма")
-        self.operation_combo.addItem("Разность")
-        self.operation_combo.addItem("Произведение")
-        self.operation_combo.addItem("Деление")
-        layout.addWidget(self.operation_combo)
-
-        self.number1_label = QLabel("Число 1:")
-        self.number1_input = QLineEdit(self)
-        layout.addWidget(self.number1_label)
-        layout.addWidget(self.number1_input)
-
-        self.number2_label = QLabel("Число 2:")
-        self.number2_input = QLineEdit(self)
-        layout.addWidget(self.number2_label)
-        layout.addWidget(self.number2_input)
-
-        self.result_label = QLabel("Результат:")
-        layout.addWidget(self.result_label)
-
-        self.result_text = QLabel(self)
-        layout.addWidget(self.result_text)
-
-        self.calculate_button = QPushButton("Выполнить операцию", self)
-        self.calculate_button.clicked.connect(self.calculate_operation)
-        layout.addWidget(self.calculate_button)
-
-        self.clear_button = QPushButton("Очистить", self)
-        self.clear_button.clicked.connect(self.clear_data)
-        layout.addWidget(self.clear_button)
-
-        self.setLayout(layout)
-        #self.result_value = None
-
-    def calculate_operation(self):
-        operation = self.operation_combo.currentText()
-        number1 = self.number1_input.text()
-        number2 = self.number2_input.text()
-
-        try:
-            number1 = float(number1)
-            number2 = float(number2)
-
-            if operation == "Сумма":
-                result = number1 + number2
-            elif operation == "Разность":
-                result = number1 - number2
-            elif operation == "Произведение":
-                result = number1 * number2
-            elif operation == "Деление":
-                result = number1 / number2
-            else:
-                result = "Неизвестная операция"
-
-            self.result_text.setText(str(result))
-
-        except ValueError:
-            self.result_text.setText("Введите корректные числа.")
-
-    def insert_sum_to_cell(self):
-        try:
-            row_number = int(self.row_number_input.text())
-            if 1 <= row_number <= 1048576:  # ограничение на номер строки в документе DOCX
-                sum_result = float(self.result_text.text())  # предполагается, что result_text содержит численный результат
-                cell_address = f"{row_number}"
-
-                # Вставляем сумму в новую строку документа DOCX
-                doc = Document()
-                doc.add_paragraph(f"{cell_address}: {sum_result}")
-
-                # Открываем диалоговое окно для ввода имени файла
-                file_name, _ = QFileDialog.getSaveFileName(self, "Сохранить документ DOCX", "", "Word Files (*.docx);;All Files (*)")
-
-                if file_name:
-                    # Сохраняем документ DOCX
-                    doc.save(file_name)
-                    print(f"Вставлено в ячейку {cell_address}: {sum_result}. Результат сохранен в файл: {file_name}")
-            else:
-                print("Недопустимый номер строки.")
-        except ValueError:
-            print("Введите корректный номер строки.")
-
-    def save_result_to_file(self):
-        try:
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
-            file_name, _ = QFileDialog.getSaveFileName(self, "Сохранить результат в файл", "", "Word Files (*.docx);;All Files (*)", options=options)
-
-            if file_name:
-                doc = Document()
-                doc.add_paragraph(str(self.result_value))
-                doc.save(file_name)
-                print(f"Результат сохранен в файл DOCX: {file_name}")
-        except Exception as e:
-            print(f"Ошибка при сохранении в файл DOCX: {e}")
-
-    def clear_data(self):
-        self.result_text.clear()
-        self.number1_input.clear()
-        self.number2_input.clear()
-
-
-#РАБОТА С ЧЕКБОКСАМИ
+#Сумма чисел
 class AboutApp(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -309,7 +237,6 @@ class AboutInstruction(QDialog):
         layout.addWidget(label)
 
 
-#ЗАПУСК
 if __name__ == "__main__":
     app = QApplication([])
     main_window = MainWindow()
