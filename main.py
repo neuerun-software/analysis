@@ -2,18 +2,23 @@ import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox
 from PyQt5.uic import loadUi
 
+
+#ОСНОВНОЕ ОКНО
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         loadUi('design.ui', self)
 
         # чекбоксы:
-        self.checkBox.setChecked(True)
+        self.checkBox.setChecked(False)
         self.checkbox_two.setChecked(False)
 
         # анализ и данные кнопки
         self.pushButton.clicked.connect(self.on_pushButton_clicked)
         self.pushButton_2.clicked.connect(self.on_pushButton_2_clicked)
+
+        self.checkBox.stateChanged.connect(self.on_checkBox_stateChanged)
+        self.checkbox_two.stateChanged.connect(self.on_checkbox_two_stateChanged)
 
     def on_pushButton_clicked(self):  # кнопка анализ
         data_entry_window = DataEntryWindow()
@@ -24,6 +29,18 @@ class MainWindow(QMainWindow):
         check_data_window = CheckYourDataInFile(None)  
         check_data_window.exec_()
 
+    def on_checkBox_stateChanged(self, state):
+        if state == 2:  # state == 2, если чекбокс отмечен
+            about_app_dialog = AboutApp(self)
+            about_app_dialog.exec_()
+
+    def on_checkbox_two_stateChanged(self, state):
+        if state == 2:  # state == 2, если чекбокс отмечен
+            about_instruction_dialog = AboutInstruction(self)
+            about_instruction_dialog.exec_()
+
+
+#ОКНО АНАЛИЗА
 class DataEntryWindow(QDialog):
     def __init__(self):
         super().__init__()
@@ -127,6 +144,8 @@ class DataEntryWindow(QDialog):
         self.text_net_income.clear()
         self.text_total_payment.clear()
 
+
+#РАСЧЕТ В АНАЛИЗЕ
 class CheckYourDataInFile(QDialog):
     def __init__(self, selected_paths):
         super().__init__()
@@ -205,6 +224,48 @@ class CheckYourDataInFile(QDialog):
         self.number2_input.clear()
 
 
+#РАБОТА С ЧЕКБОКСАМИ
+class AboutApp(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle('Справка')
+        self.setFixedSize(520, 400)
+
+        
+        label = QLabel('Здесь вы можете получить всю необходимую информацию о приложении.<br>'
+        'Узнайте текущую версию приложения, дату последнего обновления и ключевые<br> '
+        'технические особенности. Мы постоянно работаем над улучшением функционала, <br>'
+        'и здесь вы сможете найти подробности о последних изменениях.<br>'
+
+        'Также в этом разделе вы найдете информацию о команде разработчиков,<br> '
+        'ответственных за создание приложения. Узнайте больше о нашем опыте,<br> '
+        'миссии и целях, чтобы быть в курсе всех тонкостей технологического<br> '
+        'творчества.', self)
+        layout = QVBoxLayout(self)
+        layout.addWidget(label)
+
+
+class AboutInstruction(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle('Инструкция')
+        self.setFixedSize(500, 400)
+
+        label = QLabel('анализ - калькулятор ипотечной ставки и кальуклятор прибыли', self)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(label)
+
+
+#ЗАПУСК
 if __name__ == "__main__":
     app = QApplication([])
     main_window = MainWindow()
